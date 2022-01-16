@@ -1619,7 +1619,7 @@ def get_conflicts(author_profiles, user_profile, policy='default'):
     author_emails = set()
     author_relations = set()
     author_publications = set()
-    info_function = get_neurips_profile_info if policy == 'neurips' else get_profile_info
+    info_function = get_neurips_profile_info if policy == 'neurips' else get_acl_profile_info if policy == 'acl' else get_profile_info
 
     for profile in author_profiles:
         author_info = info_function(profile)
@@ -1634,7 +1634,6 @@ def get_conflicts(author_profiles, user_profile, policy='default'):
     conflicts.update(author_domains.intersection(user_info['domains']))
     conflicts.update(author_relations.intersection(user_info['emails']))
     conflicts.update(author_emails.intersection(user_info['relations']))
-    conflicts.update(author_emails.intersection(user_info['emails']))
     conflicts.update(author_emails.intersection(user_info['emails']))
     conflicts.update(author_publications.intersection(user_info['publications']))
 
@@ -1743,7 +1742,60 @@ def get_neurips_profile_info(profile, n_years=3):
         'publications': publications
     }
 
+def get_acl_profile_info(profile, n_years=5):
 
+    domains = set()
+    emails=set()
+    relations = set()
+    publications = set()
+    common_domains = ['gmail.com', 'qq.com', '126.com', '163.com',
+                      'outlook.com', 'hotmail.com', 'yahoo.com', 'foxmail.com', 'aol.com', 'msn.com', 'ymail.com', 'googlemail.com', 'live.com']
+    curr_year = datetime.datetime.now().year
+    cut_off_year = curr_year - n_years - 1
+
+    ## Institution section, only current institution counts for ACL
+    for h in profile.content.get('history', []):
+        if h.get('end') is None:
+            domain = h.get('institution', {}).get('domain', '')
+            domains.update(openreview.tools.subdomains(domain))
+
+    ## Emails section; this _does not count_ for ACL so we leave it out
+
+    ## if institution section is empty, add email domains  
+    ## this is going to add extraneous COIs for people without institutions, because people are supposed to list every email they might be in OR with, but it is what it is
+    if not domains:
+        for email in profile.content['emails']:
+            domains.update(openreview.tools.subdomains(email))
+
+    ## Relations section, get coauthor/coworker relations within the last n years + all the personal relations
+    for r in profile.content.get('relations', []):
+        if r.get('relation', '') in ['Coauthor','Coworker']:
+            if r.get('end') is None or int(r.get('end')) > cut_off_year:
+                relations.add(r['email'])
+        else:
+            relations.add(r['email'])
+
+    ## Publications section: get publications within last n years
+    for pub in profile.content.get('publications', []):
+        if pub.cdate:
+            year = int(datetime.datetime.fromtimestamp(pub.cdate/1000).year)
+        else:
+            year = int(datetime.datetime.fromtimestamp(pub.tcdate/1000).year)
+        if year > cut_off_year:
+            publications.add(pub.id)
+
+    ## Filter common domains
+    for common_domain in common_domains:
+        if common_domain in domains:
+            domains.remove(common_domain)
+
+    return {
+        'id': profile.id,
+        'domains': domains,
+        'emails': emails,
+        'relations': relations,
+        'publications': publications
+    }
 
 def post_bulk_edges (client, edges, batch_size = 50000):
     num_edges = len(edges)
