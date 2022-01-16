@@ -1603,6 +1603,9 @@ def fill_template(template, paper):
 
     return new_template
 
+def get_profile_info_function(policy):
+    return get_neurips_profile_info if policy == 'neurips' else get_acl_profile_info if policy == 'acl' else get_profile_info
+
 def get_conflicts(author_profiles, user_profile, policy='default'):
     """
     Finds conflicts between the passed user Profile and the author Profiles passed as arguments
@@ -1619,8 +1622,8 @@ def get_conflicts(author_profiles, user_profile, policy='default'):
     author_emails = set()
     author_relations = set()
     author_publications = set()
-    info_function = get_neurips_profile_info if policy == 'neurips' else get_acl_profile_info if policy == 'acl' else get_profile_info
-
+    info_function = get_profile_info_function(policy)
+    
     for profile in author_profiles:
         author_info = info_function(profile)
         author_domains.update(author_info['domains'])
