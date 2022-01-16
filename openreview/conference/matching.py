@@ -330,8 +330,6 @@ class Matching(object):
         Create conflict edges between the given Notes and Profiles
         '''
         invitation = self._create_edge_invitation(self.conference.get_conflict_score_id(self.match_group.id))
-        # Get profile info from the match group
-        user_profiles_info = [get_profile_info(p) for p in user_profiles]
 
         edges = []
 
