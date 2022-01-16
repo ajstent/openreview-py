@@ -252,21 +252,21 @@ class Matching(object):
         invitation = self.client.post_invitation(invitation)
         return invitation
 
-    def _build_conflicts(self, submissions, user_profiles, get_profile_info):
+    def _build_conflicts(self, submissions, user_profiles, policy):
         if self.alternate_matching_group:
             other_matching_group = self.client.get_group(self.alternate_matching_group)
             other_matching_profiles = tools.get_profiles(self.client, other_matching_group.members)
             return self._build_profile_conflicts(other_matching_profiles, user_profiles)
-        return self._build_note_conflicts(submissions, user_profiles, get_profile_info)
+        return self._build_note_conflicts(submissions, user_profiles, policy)
 
-    def append_note_conflicts(self, profile_id, build_conflicts=None):
+    def append_note_conflicts(self, profile_id, policy=None):
         '''
         Create conflict edges between the given Notes and a single profile
         '''
 
         # Adapt single profile to multi-profile code
         user_profiles = [profile_id]
-        user_profiles = tools.get_profiles(self.client, user_profiles, with_publications=build_conflicts)
+        user_profiles = tools.get_profiles(self.client, user_profiles, with_publications=policy)
         # Check for existing OpenReview profile - perform dummy check
         if user_profiles[0].active == None:
             raise openreview.OpenReviewException('No profile exists')
@@ -297,7 +297,7 @@ class Matching(object):
 
             # Compute conflicts for the user and all the paper authors
             for user_info in user_profiles:
-                conflicts = tools.get_conflicts(author_profiles, user_info, build_conflicts)
+                conflicts = tools.get_conflicts(author_profiles, user_info, policy)
 
                 if conflicts:
                     edges.append(Edge(
@@ -325,7 +325,7 @@ class Matching(object):
         return invitation
 
 
-    def _build_note_conflicts(self, submissions, user_profiles, get_profile_info):
+    def _build_note_conflicts(self, submissions, user_profiles, policy):
         '''
         Create conflict edges between the given Notes and Profiles
         '''
@@ -343,26 +343,10 @@ class Matching(object):
 
             # Extract domains from each profile
             author_profiles = tools.get_profiles(self.client, authorids, with_publications=True)
-            author_domains = set()
-            author_emails = set()
-            author_relations = set()
-            author_publications = set()
-
-            for author_profile in author_profiles:
-                author_info = get_profile_info(author_profile)
-                author_domains.update(author_info['domains'])
-                author_emails.update(author_info['emails'])
-                author_relations.update(author_info['relations'])
-                author_publications.update(author_info['publications'])
 
             # Compute conflicts for each user and all the paper authors
-            for user_info in user_profiles_info:
-                conflicts = set()
-                conflicts.update(author_domains.intersection(user_info['domains']))
-                conflicts.update(author_relations.intersection(user_info['emails']))
-                conflicts.update(author_emails.intersection(user_info['relations']))
-                conflicts.update(author_emails.intersection(user_info['emails']))
-                conflicts.update(author_publications.intersection(user_info['publications']))
+            for user_info in user_profiles:
+                conflicts = tools.get_conflicts(author_profiles, user_profile, policy)
 
                 if conflicts:
                     edges.append(Edge(
@@ -993,7 +977,7 @@ class Matching(object):
                 }
 
         if build_conflicts:
-            self._build_conflicts(submissions, user_profiles, openreview.tools.get_neurips_profile_info if build_conflicts == 'neurips' else openreview.tools.get_profile_info)
+            self._build_conflicts(submissions, user_profiles, build_conflicts)
 
         self._build_config_invitation(score_spec)
         return matching_status
