@@ -68,7 +68,7 @@ def _get_profiles(client, ids_or_emails, with_publications=False):
 
     if with_publications:
         for profile in profiles:
-            profile.content['publications'] = list(tools.iterget_notes(client, content={'authorids': profile.id}))
+            profile.content['publications'] = list(openreview.tools.iterget_notes(client, content={'authorids': profile.id}))
 
     return profiles
 
@@ -297,7 +297,7 @@ class Matching(object):
 
             # Compute conflicts for the user and all the paper authors
             for user_info in user_profiles:
-                conflicts = tools.get_conflicts(author_profiles, user_info, policy)
+                conflicts = openreview.tools.get_conflicts(author_profiles, user_info, policy)
 
                 if conflicts:
                     edges.append(Edge(
@@ -344,7 +344,7 @@ class Matching(object):
 
             # Compute conflicts for each user and all the paper authors
             for user_info in user_profiles:
-                conflicts = tools.get_conflicts(author_profiles, user_profile, policy)
+                conflicts = openreview.tools.get_conflicts(author_profiles, user_profile, policy)
 
                 if conflicts:
                     edges.append(Edge(
