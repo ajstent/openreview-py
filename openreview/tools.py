@@ -1745,8 +1745,7 @@ def get_neurips_profile_info(profile, n_years=3):
         'publications': publications
     }
 
-def get_acl_profile_info(profile, n_years=5):
-
+def get_acl_profile_info(profile, n_years=5, use_semantic_scholar = False):    
     domains = set()
     emails=set()
     relations = set()
@@ -1787,6 +1786,26 @@ def get_acl_profile_info(profile, n_years=5):
         if year > cut_off_year:
             publications.add(pub.id)
 
+    ## Add SemanticScholar IDs if desired
+    if(use_semantic_scholar == True):
+        try:
+            from semanticscholar import SemanticScholar
+            sch = SemanticScholar(timeout=100)
+            # get the Semantic Scholar id from the OpenReview profile
+            ssid = profile.content['semanticScholar']
+            # have to remove the URL 
+            ssid = re.sub('[^/]*/', '', ssid)
+            # get the Semantic Scholar profile
+            ssprofile = sch.author(ssid)
+            # get the papers and add their ids to publications
+            for paper in ssprofile['papers']:
+                if paper['year'] > cut_off_year:
+                    # We preface with ss_ just in case some OR id and SS id are the same
+                    publications.add'ss_' + paper['paperId'])
+        except:
+            # I don't know what to do if anything goes wrong here
+            pass
+            
     ## Filter common domains
     for common_domain in common_domains:
         if common_domain in domains:
