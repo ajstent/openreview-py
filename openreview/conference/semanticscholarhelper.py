@@ -26,18 +26,3 @@ def extend_profile(profile):
     profile.content['SemanticScholarPapers'] = papers
   except:
     print('something went wrong! ' + profile.id)
-    
-def build_id_mapping(profiles):
-  idhash = {}
-  for profile in profiles:
-    idhash[get_semanticscholar_id(profile)] = profile.id
-  return idhash
-
-# in all the profiles, substitute OpenReview IDs for Semantic Scholar IDs in the SemanticScholarPapers attribute
-def substitute_ids(profiles):
-  idhash = build_id_mapping(profiles)
-  
-  for profile in profiles:
-    for paper in profile.content['SemanticScholarPapers']:
-      # there will be some authors who don't have OpenReview ids; we can't do anything with this info so we ignore it for now
-      paper['authors'] = [idhash[x] for x in paper['authors'] if x in idhash]
