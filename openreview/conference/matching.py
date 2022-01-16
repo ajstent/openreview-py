@@ -256,7 +256,7 @@ class Matching(object):
         if self.alternate_matching_group:
             other_matching_group = self.client.get_group(self.alternate_matching_group)
             other_matching_profiles = tools.get_profiles(self.client, other_matching_group.members)
-            return self._build_profile_conflicts(other_matching_profiles, user_profiles)
+            return self._build_profile_conflicts(other_matching_profiles, user_profiles, policy)
         return self._build_note_conflicts(submissions, user_profiles, policy)
 
     def append_note_conflicts(self, profile_id, policy=None):
@@ -371,14 +371,16 @@ class Matching(object):
             raise openreview.OpenReviewException('Failed during bulk post of Conflict edges! Scores found: {0}, Edges posted: {1}'.format(len(edges), edges_posted))
         return invitation
 
-    def _build_profile_conflicts(self, head_profiles, user_profiles):
+    def _build_profile_conflicts(self, head_profiles, user_profiles, policy):
         '''
         Create conflict edges between the given Profiles and Profiles
         '''
         invitation = self._create_edge_invitation(self.conference.get_conflict_score_id(self.match_group.id))
         # Get profile info from the match group
-        user_profiles_info = [openreview.tools.get_profile_info(p) for p in user_profiles]
-        head_profiles_info = [openreview.tools.get_profile_info(p) for p in head_profiles]
+        info_policy = openreview.tools.get_info_policy(policy)
+        
+        user_profiles_info = [info_policy(p) for p in user_profiles]
+        head_profiles_info = [info_policy(p) for p in head_profiles]
 
         edges = []
 
