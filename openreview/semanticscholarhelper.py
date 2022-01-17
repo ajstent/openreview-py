@@ -1,7 +1,7 @@
 from semanticscholar import SemanticScholar
 
 # get the Semantic Scholar ID and format it properly
-get_semanticscholar_id(profile):
+def get_semanticscholar_id(profile):
   try:
     ssid = profile.content['semanticScholar']
     ssid = re.sub('[^/]*/', '', ssid)
